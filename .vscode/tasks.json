@@ -1,0 +1,13 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Mentivo AI",
+			"type": "shell",
+			"command": "cmd /c \"cd /d e:\\kiran\\mentivo-ai-main && set PORT=4100 && npm start\"",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

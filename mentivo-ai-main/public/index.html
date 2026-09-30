@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mentivo AI — Learn. Understand. Master.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root{
+    --bg:#0a0e17;
+    --panel:#111827;
+    --panel-2:#182335;
+    --border:#26344a;
+    --text:#eaf0fb;
+    --text-dim:#8ea0bd;
+    --accent:#2f7dfd;
+    --accent-dim:#2f7dfd33;
+    --accent-2:#38bdf8;
+    --amber:#38bdf8;
+    --radius:14px;
+    --font-body:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+    --font-display:'Space Grotesk',var(--font-body);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{display:none;height:100vh;width:100vw;}
+
+  /* ---------- Sidebar ---------- */
+  #sidebar{
+    width:260px;flex-shrink:0;background:var(--panel);
+    border-right:1px solid var(--border);
+    display:flex;flex-direction:column;
+    padding:14px;transition:margin-left .25s ease;
+  }
+  #sidebar.collapsed{margin-left:-260px;}
+  .logo-mark{
+    display:flex;align-items:center;gap:10px;padding:6px 8px 18px 8px;
+  }
+  .logo-glyph{
+    width:30px;height:30px;border-radius:9px;
+    background:linear-gradient(135deg,var(--accent),#1d4ed8);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);font-weight:700;font-size:14px;
+    position:relative;overflow:hidden;flex-shrink:0;
+  }
+  .logo-glyph::after{
+    content:"";position:absolute;left:0;right:0;height:2px;
+    background:rgba(255,255,255,.85);top:-10%;
+    animation:scan 2.6s ease-in-out infinite;
+    box-shadow:0 0 8px 1px rgba(255,255,255,.8);
+  }
+  @keyframes scan{
+    0%{top:-10%;} 50%{top:100%;} 100%{top:-10%;}
+  }
+  .logo-word{font-family:var(--font-display);font-weight:600;font-size:15px;letter-spacing:.2px;}
+  .new-scan-btn{
+    display:flex;align-items:center;gap:8px;
+    border:1px solid var(--border);border-radius:10px;
+    padding:10px 12px;color:var(--text);background:transparent;
+    cursor:pointer;font-size:13px;font-family:var(--font-body);
+    transition:background .15s ease;margin-bottom:16px;
+  }
+  .new-scan-btn:hover{background:var(--panel-2);}
+  #history{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:2px;}
+  .history-label{font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;padding:8px 8px 6px;}
+  .history-item{
+    padding:9px 10px;border-radius:8px;font-size:13px;color:var(--text-dim);
+    cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .history-item:hover{background:var(--panel-2);color:var(--text);}
+  .history-item.active{background:var(--accent-dim);color:var(--text);}
+  .sidebar-foot{
+    border-top:1px solid var(--border);padding-top:12px;margin-top:8px;
+    position:relative;
+  }
+  .profile-box{
+    display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;
+    cursor:pointer;transition:background .15s ease;position:relative;
+  }
+  .profile-box:hover{background:var(--panel-2);}
+  .profile-avatar{
+    width:32px;height:32px;border-radius:9px;flex-shrink:0;
+    background:linear-gradient(135deg,var(--amber),#0369a1);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);font-weight:600;font-size:13px;color:#1a1200;
+  }
+  .profile-info{flex:1;min-width:0;}
+  .profile-name{
+    font-size:13px;font-weight:500;color:var(--text);
+    outline:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .profile-name[contenteditable="true"]{
+    background:var(--panel);border:1px solid var(--accent);border-radius:6px;
+    padding:1px 5px;text-overflow:clip;
+  }
+  .profile-sub{font-size:11px;color:var(--text-dim);margin-top:1px;}
+  .profile-chevron{color:var(--text-dim);font-size:16px;flex-shrink:0;line-height:1;}
+  .profile-menu{
+    display:none;position:absolute;bottom:100%;left:0;right:0;margin-bottom:8px;z-index:30;
+    background:var(--panel-2);border:1px solid var(--border);border-radius:12px;
+    padding:6px;box-shadow:0 12px 30px -8px rgba(0,0,0,.5);
+  }
+  .profile-menu.open{display:block;}
+
+  /* ---------- Main ---------- */
+  #main{flex:1;display:flex;flex-direction:column;min-width:0;position:relative;}
+  #topbar{
+    height:52px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 16px;flex-shrink:0;
+  }
+  #toggle-sidebar{
+    background:transparent;border:none;color:var(--text-dim);cursor:pointer;
+    padding:8px;border-radius:8px;display:flex;
+  }
+  #toggle-sidebar:hover{background:var(--panel-2);color:var(--text);}
+  .topbar-title{font-size:13px;color:var(--text-dim);}
+  .share-wrap{position:relative;}
+  #share-btn[disabled]{opacity:.4;cursor:default;}
+  .share-menu{
+    display:none;position:absolute;top:44px;right:0;z-index:30;
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:6px;min-width:190px;box-shadow:0 12px 30px -8px rgba(0,0,0,.5);
+  }
+  .share-menu.open{display:block;}
+  .share-menu-item{
+    display:flex;align-items:center;gap:9px;width:100%;text-align:left;
+    background:transparent;border:none;color:var(--text);font-family:var(--font-body);
+    font-size:13px;padding:9px 10px;border-radius:8px;cursor:pointer;
+  }
+  .share-menu-item:hover{background:var(--panel-2);}
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(10px);
+    background:var(--panel-2);border:1px solid var(--border);color:var(--text);
+    padding:10px 16px;border-radius:10px;font-size:13px;z-index:50;
+    opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* ---------- Login gate ---------- */
+  #login-screen{
+    position:fixed;inset:0;background:var(--bg);display:flex;
+    align-items:center;justify-content:center;z-index:100;padding:20px;
+  }
+  .login-card{
+    width:min(100%, 430px);text-align:center;
+    background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:28px 22px;
+    box-shadow:0 18px 40px rgba(0,0,0,.18);
+  }
+  .login-title{font-size:clamp(1.7rem,2vw,2.4rem);line-height:1.2;margin-bottom:10px;}
+  .login-sub{font-size:13px;line-height:1.6;color:var(--text-dim);margin:0 auto 18px;max-width:34ch;}
+  .login-input{
+    width:100%;background:var(--panel-2);border:1px solid var(--border);border-radius:10px;
+    color:var(--text);font-family:var(--font-body);font-size:14px;padding:11px 13px;
+    margin-bottom:10px;outline:none;transition:border-color .15s ease;
+  }
+  .login-input:focus{border-color:var(--accent);}
+  .login-input.error{border-color:#ff5c5c;}
+  .login-btn{
+    width:100%;background:var(--accent);color:#fff;border:none;border-radius:10px;
+    padding:12px;font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;
+    margin-top:6px;transition:background .15s ease;
+  }
+  .login-btn:hover{background:#1f63d6;}
+  .login-note{font-size:11.5px;color:var(--text-dim);margin-top:14px;line-height:1.5;}
+
+  .login-card{position:relative;z-index:1;}
+  #login-screen{position:fixed;}
+
+  .oauth-row{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+  .oauth-btn{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    width:100%;background:var(--panel-2);border:1px solid var(--border);border-radius:10px;
+    color:var(--text);font-family:var(--font-body);font-size:13.5px;font-weight:500;
+    padding:10px 12px;cursor:pointer;transition:background .15s ease,border-color .15s ease;
+  }
+  .oauth-btn:hover{background:#232326;border-color:#3a3a40;}
+  .oauth-icon{
+    width:18px;height:18px;border-radius:4px;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;
+  }
+  .google-icon{background:#fff;color:#4285F4;font-family:var(--font-display);}
+  .ms-icon{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:2px;}
+  .ms-icon i{width:7px;height:7px;display:block;}
+  .ms-icon i:nth-child(1){background:#F25022;}
+  .ms-icon i:nth-child(2){background:#7FBA00;}
+  .ms-icon i:nth-child(3){background:#00A4EF;}
+  .ms-icon i:nth-child(4){background:#FFB900;}
+
+  .oauth-note{font-size:11px;color:var(--text-dim);line-height:1.5;margin-bottom:18px;}
+
+  .login-divider{
+    display:flex;align-items:center;gap:10px;margin:4px 0 16px;
+    color:var(--text-dim);font-size:11.5px;
+  }
+  .login-divider::before,.login-divider::after{content:"";flex:1;height:1px;background:var(--border);}
+  .login-error{
+    display:none;color:#ff8080;background:#ff5c5c1a;border:1px solid #ff5c5c40;
+    border-radius:8px;padding:8px 11px;font-size:12.5px;text-align:left;margin-bottom:10px;
+  }
+  .login-error.show{display:block;}
+  .login-hint{font-size:11.5px;color:var(--text-dim);margin-top:12px;line-height:1.5;}
+
+  @media (max-width: 1100px){
+    .login-card{width:min(100%, 390px);padding:24px 18px;}
+    .login-sub{max-width:30ch;font-size:12.5px;}
+  }
+
+  @media (max-width: 700px){
+    #login-screen{padding:16px;}
+    .login-card{width:min(100%, 360px);padding:22px 16px;}
+    .oauth-btn,.login-btn{font-size:13px;}
+    .login-title{font-size:1.6rem;}
+  }
+
+  /* ---------- Animated background blobs ---------- */
+  .bg-anim{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none;}
+  .bg-anim .blob{
+    position:absolute;border-radius:50%;filter:blur(60px);opacity:.32;
+    background:radial-gradient(circle at 30% 30%, var(--accent), transparent 70%);
+    animation:blobFloat 20s ease-in-out infinite;
+    mix-blend-mode:screen;
+  }
+  .bg-anim .b1{width:42vmax;height:42vmax;top:-14vmax;left:-10vmax;}
+  .bg-anim .b2{
+    width:36vmax;height:36vmax;bottom:-12vmax;right:-8vmax;
+    background:radial-gradient(circle at 30% 30%, var(--amber), transparent 70%);
+    animation-duration:26s;animation-delay:-6s;
+  }
+  .bg-anim .b3{
+    width:30vmax;height:30vmax;top:35%;left:60%;
+    background:radial-gradient(circle at 30% 30%, #1d4ed8, transparent 70%);
+    animation-duration:24s;animation-delay:-12s;
+  }
+  @keyframes blobFloat{
+    0%,100%{transform:translate(0,0) scale(1);}
+    33%{transform:translate(5vmax,-4vmax) scale(1.15);}
+    66%{transform:translate(-4vmax,3vmax) scale(0.9);}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .bg-anim .blob{animation:none;}
+    .logo-glyph::after,.home-glyph::after{animation:none;}
+  }
+
+  /* ---------- Home / empty state ---------- */
+  #home{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:20px;overflow-y:auto;position:relative;
+  }
+  .home-glyph{
+    width:56px;height:56px;border-radius:16px;
+    background:linear-gradient(135deg,var(--accent),#1d4ed8);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);font-weight:700;font-size:24px;
+    margin-bottom:20px;position:relative;overflow:hidden;
+    box-shadow:0 10px 40px -10px var(--accent-dim);
+  }
+  .home-glyph::after{
+    content:"";position:absolute;left:0;right:0;height:2px;
+    background:rgba(255,255,255,.85);top:-10%;
+    animation:scan 2.6s ease-in-out infinite;
+    box-shadow:0 0 10px 1px rgba(255,255,255,.85);
+  }
+  .home-title{
+    font-family:var(--font-display);font-weight:600;
+    font-size:clamp(24px,6vw,34px);
+    margin-bottom:6px;text-align:center;
+  }
+  .home-tagline{
+    font-family:var(--font-display);font-weight:500;
+    font-size:clamp(12px,2.6vw,14.5px);letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:16px;text-align:center;
+  }
+  .home-sub{
+    color:var(--text-dim);font-size:14.5px;margin-bottom:32px;text-align:center;max-width:440px;
+  }
+
+  /* ---------- Composer ---------- */
+  #composer-wrap{width:100%;max-width:720px;}
+  #dropzone{
+    border:1px solid var(--border);border-radius:20px;background:var(--panel);
+    padding:14px 14px 10px;transition:border-color .15s ease, background .15s ease;
+  }
+  #dropzone.dragover{border-color:var(--accent);background:var(--panel-2);}
+  #file-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+  .file-chip{
+    display:flex;align-items:center;gap:7px;background:var(--panel-2);
+    border:1px solid var(--border);border-radius:9px;padding:6px 9px 6px 10px;font-size:12.5px;
+  }
+  .file-chip .fname{max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .file-chip .fsize{color:var(--text-dim);font-size:11px;}
+  .file-chip .remove{
+    cursor:pointer;color:var(--text-dim);font-size:14px;line-height:1;padding:2px;
+  }
+  .file-chip .remove:hover{color:var(--text);}
+  #note-input{
+    width:100%;background:transparent;border:none;outline:none;color:var(--text);
+    font-family:var(--font-body);font-size:15px;resize:none;max-height:160px;line-height:1.5;
+    padding:6px 4px;
+  }
+  #note-input::placeholder{color:var(--text-dim);}
+  #composer-row{display:flex;align-items:flex-end;justify-content:space-between;padding-top:6px;}
+  .composer-actions-left{display:flex;gap:6px;}
+  .icon-btn{
+    width:36px;height:36px;border-radius:10px;border:1px solid var(--border);
+    background:transparent;color:var(--text-dim);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    transition:background .15s ease,color .15s ease;
+  }
+  .icon-btn:hover{background:var(--panel-2);color:var(--text);}
+  #send-btn{
+    width:36px;height:36px;border-radius:10px;border:none;
+    background:var(--text-dim);color:var(--bg);cursor:default;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    transition:background .15s ease;
+  }
+  #send-btn.ready{background:var(--accent);color:#fff;cursor:pointer;}
+  #send-btn.ready:hover{background:#1f63d6;}
+
+  #file-input{display:none;}
+
+  /* ---------- Chat view ---------- */
+  #chat{flex:1;display:none;flex-direction:column;overflow:hidden;}
+  #chat.active{display:flex;}
+  #messages{flex:1;overflow-y:auto;padding:24px 0 12px;}
+  .msg-row{max-width:760px;margin:0 auto 22px;padding:0 20px;}
+  .msg-user{display:flex;justify-content:flex-end;}
+  .msg-user .bubble{
+    background:var(--panel-2);border:1px solid var(--border);border-radius:16px 16px 4px 16px;
+    padding:11px 15px;font-size:14.5px;max-width:80%;
+  }
+  .msg-ak{display:flex;gap:12px;align-items:flex-start;}
+  .msg-ak .avatar{
+    width:28px;height:28px;border-radius:8px;flex-shrink:0;margin-top:2px;
+    background:linear-gradient(135deg,var(--accent),#1d4ed8);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);font-weight:700;font-size:11px;
+  }
+  .msg-ak .content{flex:1;font-size:14.5px;line-height:1.65;min-width:0;}
+  .msg-ak .content p{margin-bottom:10px;}
+
+  .overview-strip{
+    display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 16px;
+  }
+  .stat-pill{
+    background:var(--panel-2);border:1px solid var(--border);border-radius:10px;
+    padding:8px 12px;font-size:12px;color:var(--text-dim);
+  }
+  .stat-pill b{color:var(--text);font-size:13px;}
+
+  .file-card{
+    border:1px solid var(--border);border-radius:12px;background:var(--panel);
+    margin-bottom:12px;overflow:hidden;
+  }
+  .file-card-head{
+    display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;
+    user-select:none;
+  }
+  .file-icon{
+    width:30px;height:30px;border-radius:8px;background:var(--panel-2);
+    display:flex;align-items:center;justify-content:center;font-size:13px;
+    color:var(--amber);flex-shrink:0;font-weight:600;font-family:var(--font-display);
+  }
+  .file-card-head .fname{font-weight:500;font-size:13.5px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .file-card-head .fmeta{font-size:11.5px;color:var(--text-dim);flex-shrink:0;}
+  .chevron{color:var(--text-dim);font-size:11px;transition:transform .15s ease;flex-shrink:0;}
+  .file-card.open .chevron{transform:rotate(180deg);}
+  .file-card-body{
+    padding:0 14px 14px;font-size:13.5px;color:var(--text);line-height:1.6;
+    display:none;
+  }
+  .file-card.open .file-card-body{display:block;}
+  .keywords{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .kw{
+    background:#38bdf822;color:var(--amber);border:1px solid #38bdf840;
+    border-radius:6px;padding:3px 8px;font-size:11px;
+  }
+  .unsupported-note{
+    color:var(--text-dim);font-style:italic;font-size:12.5px;margin-top:6px;
+  }
+  .file-thumb{
+    max-width:100%;max-height:280px;border-radius:8px;display:block;
+    margin-bottom:10px;object-fit:contain;background:#000;
+  }
+  .file-media{width:100%;margin-bottom:10px;border-radius:8px;display:block;}
+  .download-link{
+    display:inline-flex;align-items:center;gap:8px;margin-top:6px;
+    background:var(--accent);color:#fff;text-decoration:none;
+    border-radius:10px;padding:10px 16px;font-size:13.5px;font-weight:600;
+    transition:background .15s ease;
+  }
+  .download-link:hover{background:#1f63d6;}
+  .badge-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+  .badge{
+    font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;
+    background:var(--panel-2);border:1px solid var(--border);color:var(--text-dim);
+    border-radius:6px;padding:3px 7px;
+  }
+
+  /* ---------- Login gate ---------- */
+  #login-screen{
+    position:fixed;inset:0;z-index:100;background:var(--bg);
+    display:flex;align-items:center;justify-content:center;padding:20px;
+  }
+  #login-screen.hidden{display:none;}
+  .login-card{
+    width:100%;max-width:360px;background:var(--panel);border:1px solid var(--border);
+    border-radius:18px;padding:32px 28px;text-align:center;
+  }
+  .login-title{font-family:var(--font-display);font-weight:600;font-size:22px;margin-bottom:8px;}
+  .login-sub{font-size:12.5px;color:var(--text-dim);margin-bottom:22px;line-height:1.5;}
+  .login-input{
+    width:100%;background:var(--panel-2);border:1px solid var(--border);border-radius:10px;
+    padding:11px 13px;color:var(--text);font-family:var(--font-body);font-size:14px;
+    margin-bottom:10px;outline:none;
+  }
+  .login-input:focus{border-color:var(--accent);}
+
+  /* ---------- Profile menu ---------- */
+  .profile-wrap{position:relative;}
+  .profile-menu{
+    display:none;position:absolute;bottom:52px;left:0;right:0;z-index:30;
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:6px;box-shadow:0 12px 30px -8px rgba(0,0,0,.5);
+  }
+  .profile-menu.open{display:block;}
+
+  .study-scene{
+    position:absolute;inset:0;pointer-events:none;overflow:hidden;opacity:.75;
+  }
+  .study-item{
+    position:absolute;bottom:8%;width:56px;height:56px;border-radius:16px;
+    background:linear-gradient(135deg, rgba(47,125,253,.45), rgba(56,189,248,.14));
+    border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(4px);
+    box-shadow:0 18px 40px -20px rgba(47,125,253,.9);animation:studyFloat 10s ease-in-out infinite;
+  }
+  .study-item:nth-child(1){left:8%;transform:rotate(-12deg);animation-delay:0s;}
+  .study-item:nth-child(2){left:22%;bottom:11%;width:42px;height:42px;animation-delay:1.3s;}
+  .study-item:nth-child(3){right:18%;bottom:9%;width:48px;height:48px;animation-delay:2.5s;}
+  .study-item:nth-child(4){right:9%;bottom:18%;width:62px;height:62px;animation-delay:4s;}
+  @keyframes studyFloat{
+    0%,100%{transform:translateY(0) rotate(-10deg);}
+    50%{transform:translateY(-18px) rotate(8deg);}
+  }
+
+  .example-link{
+    margin-top:20px;background:transparent;border:none;color:var(--text-dim);
+    font-size:12.5px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;
+    font-family:var(--font-body);
+  }
+  .example-link:hover{color:var(--text);}
+
+  #composer-bottom{padding:10px 20px 18px;flex-shrink:0;}
+  #composer-bottom #composer-wrap{max-width:760px;margin:0 auto;}
+
+  ::-webkit-scrollbar{width:9px;}
+  ::-webkit-scrollbar-thumb{background:#2e2e33;border-radius:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+
+  @media (max-width:720px){
+    #sidebar{position:fixed;z-index:20;height:100vh;box-shadow:0 0 40px rgba(0,0,0,.5);}
+    #sidebar:not(.collapsed){margin-left:0;}
+    #sidebar.collapsed{margin-left:-260px;}
+    .msg-row{padding:0 14px;}
+    .login-card{padding:26px 20px;}
+    #topbar{padding:0 10px;}
+  }
+  @media (max-width:420px){
+    .oauth-btn{font-size:12.5px;}
+    .file-chip .fname{max-width:110px;}
+  }
+  /* Prevent iOS Safari from auto-zooming when a text input is focused */
+  .login-input, #note-input, #note-input-b{font-size:16px;}
+
+  .advanced-image-tools{display:none;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;}
+  .advanced-image-tools.visible{display:flex;}
+  .advanced-image-tools select,
+  .advanced-image-tools input{
+    background:rgba(17,24,39,.8);border:1px solid var(--border);color:var(--text);
+    border-radius:10px;padding:8px 10px;font-size:12px;font-family:var(--font-body);
+    outline:none;
+  }
+  .advanced-image-tools input{min-width:170px;flex:1;}
+  .advanced-image-tools select{min-width:120px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <aside id="sidebar">
+    <div class="logo-mark">
+      <div class="logo-glyph">M</div>
+      <div class="logo-word">Mentivo AI</div>
+    </div>
+    <button class="new-scan-btn" id="new-scan-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      New scan
+    </button>
+    <div class="history-label">Recent scans</div>
+    <div id="history"></div>
+    <div class="sidebar-foot">
+      <div class="profile-wrap" id="profile-wrap">
+        <div class="profile-menu" id="profile-menu">
+          <button class="share-menu-item" id="profile-edit-btn">✎ Edit name</button>
+          <button class="share-menu-item" id="profile-logout-btn">🚪 Log out</button>
+        </div>
+        <div class="profile-box" id="profile-box" title="Account options">
+          <div class="profile-avatar" id="profile-avatar">U</div>
+          <div class="profile-info">
+            <div class="profile-name" id="profile-name" spellcheck="false">You</div>
+            <div class="profile-sub" id="profile-sub">Signed in · file scans stay on this device</div>
+          </div>
+          <span class="profile-chevron">⋯</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main id="main">
+    <div id="topbar">
+      <button id="toggle-sidebar" title="Toggle sidebar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>
+      </button>
+      <div class="topbar-title" id="topbar-title">Mentivo AI — local file scanner</div>
+      <div class="share-wrap">
+        <button id="share-btn" class="icon-btn" title="Share this chat">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.5l6.8-3.9M8.6 13.5l6.8 3.9"/></svg>
+        </button>
+        <div class="share-menu" id="share-menu">
+          <button class="share-menu-item" id="share-result">💬 Share current result</button>
+          <button class="share-menu-item" id="share-chat">🗂️ Share entire chat</button>
+          <button class="share-menu-item" id="share-native">📤 Share via device… (WhatsApp, Bluetooth, etc.)</button>
+          <button class="share-menu-item" id="share-whatsapp">🟢 WhatsApp</button>
+          <button class="share-menu-item" id="share-email">✉️ Email</button>
+          <button class="share-menu-item" id="share-copy">📋 Copy transcript</button>
+          <button class="share-menu-item" id="share-download">⬇ Download as .txt</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOME -->
+    <div id="home">
+      <div class="bg-anim" aria-hidden="true">
+        <div class="blob b1"></div>
+        <div class="blob b2"></div>
+        <div class="blob b3"></div>
+      </div>
+      <div class="study-scene" aria-hidden="true">
+        <div class="study-item"></div>
+        <div class="study-item"></div>
+        <div class="study-item"></div>
+        <div class="study-item"></div>
+      </div>
+      <div class="home-glyph">M</div>
+      <div class="home-title">Mentivo AI</div>
+      <div class="home-tagline">Learn. Understand. Master.</div>
+      <div class="home-sub" id="home-sub">Attach files to scan, or just ask for anything — a question, an image, a video, a PPT, or a PDF. Mentivo AI figures out what you need.</div>
+
+
+      <div id="composer-wrap">
+        <div id="dropzone">
+          <div id="file-chips"></div>
+          <textarea id="note-input" rows="1" placeholder="Ask anything, or attach files to scan…"></textarea>
+          <div class="advanced-image-tools" id="image-tools">
+            <select id="image-style">
+              <option value="">Style: default</option>
+              <option value="cinematic">Cinematic</option>
+              <option value="photo-realistic">Photo realistic</option>
+              <option value="cartoon">Cartoon</option>
+              <option value="cyberpunk">Cyberpunk</option>
+              <option value="watercolor">Watercolor</option>
+              <option value="minimalist">Minimalist</option>
+            </select>
+            <select id="image-ratio">
+              <option value="">Aspect: 1:1</option>
+              <option value="1:1">1:1</option>
+              <option value="16:9">16:9</option>
+              <option value="9:16">9:16</option>
+              <option value="4:5">4:5</option>
+              <option value="3:2">3:2</option>
+            </select>
+            <select id="image-count">
+              <option value="1">1 image</option>
+              <option value="2">2 images</option>
+              <option value="3">3 images</option>
+              <option value="4">4 images</option>
+            </select>
+            <input id="image-negative" placeholder="Negative prompt (optional)" />
+          </div>
+          <div id="composer-row">
+            <div class="composer-actions-left" id="composer-actions-left">
+              <button class="icon-btn" id="attach-btn" title="Attach files">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+              </button>
+              <button class="icon-btn" id="attach-folder-btn" title="Attach a folder">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+              </button>
+            </div>
+            <button id="send-btn" title="Scan files">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+            </button>
+          </div>
+        </div>
+        <button class="example-link" id="example-link">▶ See an example summary</button>
+      </div>
+    </div>
+
+    <!-- CHAT -->
+    <div id="chat">
+      <div id="messages"></div>
+      <div id="composer-bottom">
+        <div id="composer-wrap-bottom"></div>
+      </div>
+    </div>
+
+    <input type="file" id="file-input" multiple>
+    <input type="file" id="folder-input" webkitdirectory directory multiple>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<div id="login-screen">
+  <div class="bg-anim" aria-hidden="true">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+  </div>
+  <div class="login-card">
+    <div class="home-glyph" style="margin:0 auto 18px;">M</div>
+    <div class="login-title">Sign in to Mentivo AI</div>
+    <div class="login-sub">Your account is stored on this app's own server (password hashed, never in plain text). File scanning itself still happens entirely in your browser — only your login goes to the server.</div>
+
+    <div class="oauth-row">
+      <button class="oauth-btn" id="oauth-google" type="button">
+        <span class="oauth-icon google-icon">G</span> Continue with Google
+      </button>
+      <button class="oauth-btn" id="oauth-microsoft" type="button">
+        <span class="oauth-icon ms-icon"><i></i><i></i><i></i><i></i></span> Continue with Microsoft
+      </button>
+    </div>
+    <div class="oauth-note" id="oauth-note">Google/Microsoft sign-in needs credentials configured on the server (see .env.example). If they're not set up yet, those buttons will explain that instead of failing silently.</div>
+
+    <div class="login-divider"><span>or use your name, email &amp; password</span></div>
+
+    <input id="login-name" class="login-input" type="text" placeholder="Your name" autocomplete="off">
+    <input id="login-email" class="login-input" type="email" placeholder="Email" autocomplete="off">
+    <input id="login-password" class="login-input" type="password" placeholder="Password (min. 6 characters)" autocomplete="off">
+    <div class="login-error" id="login-error"></div>
+    <button id="login-btn" class="login-btn">Continue</button>
+    <div class="login-hint">New here? Just enter a name, email and password above — an account is created automatically the first time.</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============ Extractive summarization (fully local) ============ */
+  const STOPWORDS = new Set(("the is at which on a an and or but in with to for of as by that this it from be are was were has have had not they you your our their i we he she his her its if then than so such can will would could should do does did been being into about over under more most some any no nor only also just there here when where how what who whom these those them us this's that's it's don't isn't aren't".split(" ")));
+
+  function splitSentences(text){
+    const clean = text.replace(/\s+/g," ").trim();
+    if(!clean) return [];
+    const raw = clean.match(/[^.!?]+[.!?]+(\s|$)/g);
+    return (raw || [clean]).map(s=>s.trim()).filter(s=>s.length>1);
+  }
+
+  function wordFreq(text){
+    const words = (text.toLowerCase().match(/[a-z0-9']+/g)) || [];
+    const freq = {};
+    for(const w of words){
+      if(STOPWORDS.has(w) || w.length<3) continue;
+      freq[w] = (freq[w]||0)+1;
+    }
+    return {freq, wordCount: words.length};
+  }
+
+  function topKeywords(freq, n){
+    return Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,n).map(e=>e[0]);
+  }
+
+  function summarize(text, maxSentences){
+    const sentences = splitSentences(text);
+    if(sentences.length===0) return "";
+    if(sentences.length<=maxSentences) return sentences.join(" ");
+    const {freq} = wordFreq(text);
+    const scored = sentences.map((s,idx)=>{
+      const words = (s.toLowerCase().match(/[a-z0-9']+/g)) || [];
+      let score=0;
+      for(const w of words){ if(freq[w]) score += freq[w]; }
+      score = words.length ? score/words.length : 0;
+      if(idx===0) score *= 1.35;
+      if(idx===sentences.length-1) score *= 1.1;
+      return {s, idx, score};
+    });
+    const top = scored.sort((a,b)=>b.score-a.score).slice(0,maxSentences).sort((a,b)=>a.idx-b.idx);
+    return top.map(t=>t.s).join(" ");
+  }
+
+  const MAX_CHARS = 300000; // cap analysis size so huge files don't freeze the tab
+
+  const CATEGORY_EXT = {
+    text: new Set(["txt","md","markdown","csv","tsv","json","js","jsx","ts","tsx","py","java","c","cpp","h","hpp","css","html","htm","xml","yaml","yml","log","sh","rb","go","rs","php","sql","ini","conf","cfg","toml","bat","ps1"]),
+    image: new Set(["png","jpg","jpeg","gif","webp","bmp","svg","avif"]),
+    audio: new Set(["mp3","wav","ogg","m4a","flac","aac"]),
+    video: new Set(["mp4","mov","webm","avi","mkv","m4v"])
+  };
+
+  function extFor(name){
+    const parts = name.split(".");
+    return parts.length>1 ? parts.pop().toLowerCase() : "";
+  }
+
+  function categorize(ext){
+    if(ext==="pdf") return "pdf";
+    if(ext==="docx") return "docx";
+    if(ext==="pptx") return "pptx";
+    if(ext==="xlsx"||ext==="xlsm") return "xlsx";
+    if(CATEGORY_EXT.text.has(ext)) return "text";
+    if(CATEGORY_EXT.image.has(ext)) return "image";
+    if(CATEGORY_EXT.audio.has(ext)) return "audio";
+    if(CATEGORY_EXT.video.has(ext)) return "video";
+    return "other";
+  }
+
+  function fmtBytes(n){
+    if(n < 1024) return n + " B";
+    if(n < 1024*1024) return (n/1024).toFixed(1) + " KB";
+    return (n/(1024*1024)).toFixed(1) + " MB";
+  }
+
+  function fmtDuration(sec){
+    if(!sec || !isFinite(sec)) return "";
+    sec = Math.round(sec);
+    const m = Math.floor(sec/60), s = sec%60;
+    return `${m}:${s.toString().padStart(2,"0")}`;
+  }
+
+  function truncateText(text){
+    if(text.length > MAX_CHARS) return { text: text.slice(0, MAX_CHARS), truncated:true };
+    return { text, truncated:false };
+  }
+
+  function readAsText(file){
+    return new Promise((resolve,reject)=>{
+      const r = new FileReader();
+      r.onload = ()=>resolve(r.result);
+      r.onerror = ()=>reject(r.error);
+      r.readAsText(file);
+    });
+  }
+  function readAsArrayBuffer(file){
+    return new Promise((resolve,reject)=>{
+      const r = new FileReader();
+      r.onload = ()=>resolve(r.result);
+      r.onerror = ()=>reject(r.error);
+      r.readAsArrayBuffer(file);
+    });
+  }
+  function readAsDataUrl(file){
+    return new Promise((resolve,reject)=>{
+      const r = new FileReader();
+      r.onload = ()=>resolve(r.result);
+      r.onerror = ()=>reject(r.error);
+      r.readAsDataURL(file);
+    });
+  }
+  function getImageDims(dataUrl){
+    return new Promise((resolve)=>{
+      const img = new Image();
+      img.onload = ()=>resolve({width:img.naturalWidth, height:img.naturalHeight});
+      img.onerror = ()=>resolve({width:0, height:0});
+      img.src = dataUrl;
+    });
+  }
+  function getMediaDuration(dataUrl, category){
+    return new Promise((resolve)=>{
+      const el = document.createElement(category==="audio" ? "audio" : "video");
+      el.preload = "metadata";
+      el.onloadedmetadata = ()=>resolve(el.duration);
+      el.onerror = ()=>resolve(0);
+      el.src = dataUrl;
+    });
+  }
+  function decodeXmlEntities(s){
+    return s.replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,"&");
+  }
+  function xmlTagTexts(xml, tagRegex){
+    const matches = xml.match(tagRegex) || [];
+    return matches.map(m=>decodeXmlEntities(m.replace(/<[^>]+>/g,"")));
+  }
+
+  async function analyzeFile(file, sentenceCount){
+    const ext = extFor(file.name);
+    const category = categorize(ext);
+    const base = { name:file.name, size:file.size, ext, category, sentenceCount };
+
+    try{
+      if(category==="text"){
+        const raw = await readAsText(file);
+        const {text, truncated} = truncateText(raw);
+
+        if(ext==="json"){
+          let structNote = "";
+          try{
+            const parsed = JSON.parse(raw);
+            if(Array.isArray(parsed)) structNote = "Top-level JSON array with " + parsed.length + " item(s).";
+            else if(typeof parsed==="object" && parsed) structNote = "Top-level JSON object with keys: " + Object.keys(parsed).slice(0,12).join(", ") + (Object.keys(parsed).length>12?"…":"") + ".";
+          }catch(e){ structNote = "Could not parse as strict JSON — summarized as text instead."; }
+          const {freq, wordCount} = wordFreq(text);
+          return Object.assign(base, {
+            supported:true, wordCount, charCount:text.length,
+            summary: (structNote ? structNote + " " : "") + summarize(text, sentenceCount),
+            keywords: topKeywords(freq, 8)
+          });
+        }
+
+        if(ext==="csv" || ext==="tsv"){
+          const delim = ext==="csv" ? "," : "\t";
+          const lines = text.split(/\r?\n/).filter(l=>l.length>0);
+          const header = lines[0] ? lines[0].split(delim) : [];
+          const rowCount = Math.max(0, lines.length-1);
+          const {freq, wordCount} = wordFreq(text);
+          return Object.assign(base, {
+            supported:true, wordCount, charCount:text.length, rowCount,
+            summary: `Tabular data with ${rowCount} row(s) and ${header.length} column(s). Columns: ${header.slice(0,10).join(", ")}${header.length>10?"…":""}.`,
+            keywords: topKeywords(freq, 6)
+          });
+        }
+
+        const {freq, wordCount} = wordFreq(text);
+        return Object.assign(base, {
+          supported:true, wordCount, charCount:text.length,
+          summary: (summarize(text, sentenceCount) || "(File appears to be empty.)") + (truncated ? " (Based on the first portion of a large file.)" : ""),
+          keywords: topKeywords(freq, 8)
+        });
+      }
+
+      if(category==="pdf"){
+        if(typeof pdfjsLib === "undefined") throw new Error("PDF reader unavailable");
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        const buf = await readAsArrayBuffer(file);
+        const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+        const maxPages = Math.min(pdf.numPages, 40);
+        let full = "";
+        for(let p=1; p<=maxPages; p++){
+          const page = await pdf.getPage(p);
+          const content = await page.getTextContent();
+          full += content.items.map(it=>it.str).join(" ") + " ";
+        }
+        const {text, truncated} = truncateText(full);
+        const {freq, wordCount} = wordFreq(text);
+        let summary;
+        if(wordCount===0){
+          summary = "This PDF has no extractable text layer (likely a scanned document) — Mentivo AI can't OCR it offline.";
+        }else{
+          summary = summarize(text, sentenceCount);
+          if(maxPages < pdf.numPages) summary += ` (Scanned the first ${maxPages} of ${pdf.numPages} pages.)`;
+          else if(truncated) summary += " (Based on the first portion of a large document.)";
+        }
+        return Object.assign(base, { supported:true, wordCount, charCount:text.length, pageCount: pdf.numPages, summary, keywords: topKeywords(freq, 8) });
+      }
+
+      if(category==="docx"){
+        if(typeof JSZip === "undefined") throw new Error("DOCX reader unavailable");
+        const buf = await readAsArrayBuffer(file);
+        const zip = await JSZip.loadAsync(buf);
+        const docXml = zip.file("word/document.xml");
+        if(!docXml) throw new Error("not a valid .docx");
+        const xml = await docXml.async("string");
+        const full = xmlTagTexts(xml, /<w:t[^>]*>([^<]*)<\/w:t>/g).join(" ");
+        const {text, truncated} = truncateText(full);
+        const {freq, wordCount} = wordFreq(text);
+        return Object.assign(base, {
+          supported:true, wordCount, charCount:text.length,
+          summary: (summarize(text, sentenceCount) || "(No readable text found in this document.)") + (truncated ? " (Based on the first portion.)" : ""),
+          keywords: topKeywords(freq, 8)
+        });
+      }
+
+      if(category==="pptx"){
+        if(typeof JSZip === "undefined") throw new Error("PPTX reader unavailable");
+        const buf = await readAsArrayBuffer(file);
+        const zip = await JSZip.loadAsync(buf);
+        const slideNames = Object.keys(zip.files)
+          .filter(n=>/^ppt\/slides\/slide\d+\.xml$/.test(n))
+          .sort((a,b)=>{
+            const na = parseInt(a.match(/slide(\d+)\.xml/)[1],10);
+            const nb = parseInt(b.match(/slide(\d+)\.xml/)[1],10);
+            return na-nb;
+          });
+        let full = "";
+        for(const n of slideNames){
+          const xml = await zip.file(n).async("string");
+          full += xmlTagTexts(xml, /<a:t>([^<]*)<\/a:t>/g).join(" ") + " ";
+        }
+        const {text, truncated} = truncateText(full);
+        const {freq, wordCount} = wordFreq(text);
+        return Object.assign(base, {
+          supported:true, wordCount, charCount:text.length, slideCount: slideNames.length,
+          summary: (wordCount>0 ? summarize(text, sentenceCount) : "No readable text found on the slides (they may be image-only).") + (truncated ? " (Based on available slide text.)" : ""),
+          keywords: topKeywords(freq, 8)
+        });
+      }
+
+      if(category==="xlsx"){
+        if(typeof JSZip === "undefined") throw new Error("XLSX reader unavailable");
+        const buf = await readAsArrayBuffer(file);
+        const zip = await JSZip.loadAsync(buf);
+        const sheetNames = Object.keys(zip.files).filter(n=>/^xl\/worksheets\/sheet\d+\.xml$/.test(n));
+        let sharedStrings = [];
+        const ssFile = zip.file("xl/sharedStrings.xml");
+        if(ssFile){
+          const ssXml = await ssFile.async("string");
+          sharedStrings = xmlTagTexts(ssXml, /<t[^>]*>([^<]*)<\/t>/g);
+        }
+        let rowCount = 0;
+        if(sheetNames.length){
+          const firstXml = await zip.file(sheetNames[0]).async("string");
+          rowCount = (firstXml.match(/<row /g) || []).length;
+        }
+        const full = sharedStrings.join(" ");
+        const {text, truncated} = truncateText(full);
+        const {freq, wordCount} = wordFreq(text);
+        const summary = `Spreadsheet with ${sheetNames.length} sheet(s); the first sheet has about ${rowCount} row(s). ` +
+          (wordCount>0 ? summarize(text, sentenceCount) : "Cells look mostly numeric — no significant text content to summarize.") +
+          (truncated ? " (Based on the first portion of the text content.)" : "");
+        return Object.assign(base, { supported:true, wordCount, charCount:text.length, sheetCount: sheetNames.length, rowCount, summary, keywords: topKeywords(freq, 8) });
+      }
+
+      if(category==="image"){
+        const dataUrl = await readAsDataUrl(file);
+        const dims = await getImageDims(dataUrl);
+        return Object.assign(base, {
+          supported:true, isImage:true, previewUrl: dataUrl, width: dims.width, height: dims.height,
+          summary: `Here's what I can tell just from the file itself: it's a ${dims.width}×${dims.height}px image. I don't run an offline vision model in your browser, so I can't actually describe what's pictured — for example, I can't tell you whether this is a sunset photo, a screenshot, or a scanned receipt. I can only report on size, format, and file details, not the visual content.`
+        });
+      }
+
+      if(category==="audio" || category==="video"){
+        const dataUrl = await readAsDataUrl(file);
+        const duration = await getMediaDuration(dataUrl, category);
+        const kind = category==="audio" ? "audio" : "video";
+        return Object.assign(base, {
+          supported:true, isMedia:true, mediaCategory:category, previewUrl: dataUrl, duration,
+          summary: `Here's what I can tell just from the file itself: it's a${category==="audio"?"n":""} ${kind} file${duration ? `, about ${fmtDuration(duration)} long` : ""}. I don't have offline transcription, so I can't tell you what's actually said or shown — for example, whether this is a voice memo, a meeting recording, or a music track. I've loaded it below so you can play it and judge for yourself.`
+        });
+      }
+
+      return Object.assign(base, { supported:false });
+
+    }catch(err){
+      return Object.assign(base, { supported:false, error:true, errorMsg: String(err && err.message || err) });
+    }
+  }
+
+  /* ============ UI state ============ */
+  let attachedFiles = [];
+  let sessions = [];
+  let currentSession = null;
+
+  const $ = (id)=>document.getElementById(id);
+  const fileInput = $("file-input");
+  const folderInput = $("folder-input");
+  const fileChips = $("file-chips");
+  const noteInput = $("note-input");
+  const sendBtn = $("send-btn");
+  const dropzone = $("dropzone");
+  const home = $("home");
+  const chat = $("chat");
+  const messages = $("messages");
+  const sidebar = $("sidebar");
+  const historyEl = $("history");
+  const topbarTitle = $("topbar-title");
+  const profileName = $("profile-name");
+  const profileAvatar = $("profile-avatar");
+  const shareBtn = $("share-btn");
+  const shareMenu = $("share-menu");
+  const toastEl = $("toast");
+
+  /* ---- Login gate (talks to the real backend in /server) ---- */
+  const loginScreen = $("login-screen");
+  const appRoot = $("app");
+  const loginNameInput = $("login-name");
+  const loginEmailInput = $("login-email");
+  const loginPasswordInput = $("login-password");
+  const loginErrorEl = $("login-error");
+  const loginBtn = $("login-btn");
+
+  function showLoginError(msg){
+    loginErrorEl.textContent = msg;
+    loginErrorEl.classList.add("show");
+  }
+  function clearLoginError(){
+    loginErrorEl.classList.remove("show");
+    loginErrorEl.textContent = "";
+  }
+  function enterApp(user){
+    profileName.textContent = user.name;
+    profileAvatar.textContent = (user.name||"U").slice(0,1).toUpperCase();
+    loginScreen.style.display = "none";
+    appRoot.style.display = "flex";
+  }
+
+  async function doLocalLogin(){
+    const name = loginNameInput.value.trim();
+    const email = loginEmailInput.value.trim();
+    const password = loginPasswordInput.value;
+    clearLoginError();
+
+    if(!name){ showLoginError("Name is required."); loginNameInput.focus(); return; }
+    if(!email){ showLoginError("Email is required."); loginEmailInput.focus(); return; }
+    if(!password || password.length<6){ showLoginError("Password must be at least 6 characters."); loginPasswordInput.focus(); return; }
+
+    loginBtn.disabled = true;
+    loginBtn.textContent = "Please wait…";
+    try{
+      const res = await fetch("/api/auth/local", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        credentials:"include",
+        body: JSON.stringify({ name, email, password })
+      });
+      const data = await res.json();
+      if(!res.ok){
+        showLoginError(data.error || "Sign-in failed. Please try again.");
+        loginPasswordInput.value = "";
+        loginPasswordInput.focus();
+        return;
+      }
+      enterApp(data.user);
+    }catch(err){
+      showLoginError("Couldn't reach the server. Is it running?");
+    }finally{
+      loginBtn.disabled = false;
+      loginBtn.textContent = "Continue";
+    }
+  }
+
+  async function logOut(){
+    try{ await fetch("/api/auth/logout", { method:"POST", credentials:"include" }); }catch(e){}
+    appRoot.style.display = "none";
+    loginScreen.style.display = "flex";
+    clearLoginFields();
+    clearLoginError();
+    resetToHome();
+  }
+
+  $("login-btn").addEventListener("click", doLocalLogin);
+  [loginNameInput, loginEmailInput, loginPasswordInput].forEach(inp=>{
+    inp.addEventListener("keydown", (e)=>{ if(e.key==="Enter") doLocalLogin(); });
+    inp.addEventListener("input", clearLoginError);
+  });
+
+  // Google/Microsoft: full-page redirect into the real OAuth2 flow implemented
+  // in server/routes/auth.js. If the server has no client ID/secret configured
+  // yet, the server responds with a plain-text setup message instead of a
+  // silent failure.
+  $("oauth-google").addEventListener("click", ()=>{ window.location.href = "/api/auth/google"; });
+  $("oauth-microsoft").addEventListener("click", ()=>{ window.location.href = "/api/auth/microsoft"; });
+
+  // Some browsers repopulate text/password inputs from the page's previous
+  // state on a manual refresh or a back/forward-cache restore, even with
+  // autocomplete off. Force the login form empty every time it's shown.
+  function clearLoginFields(){
+    loginNameInput.value = "";
+    loginEmailInput.value = "";
+    loginPasswordInput.value = "";
+  }
+  window.addEventListener("pageshow", clearLoginFields);
+
+  // Restore an existing session on page load (real backend session, via cookie),
+  // and surface any OAuth error passed back via the redirect query string.
+  (async function checkExistingSession(){
+    const params = new URLSearchParams(window.location.search);
+    const authError = params.get("authError");
+    if(authError){
+      showLoginError(authError);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+    try{
+      const res = await fetch("/api/auth/me", { credentials:"include" });
+      if(res.ok){
+        const data = await res.json();
+        if(data.user) enterApp(data.user);
+      }
+    }catch(e){ /* server not reachable yet — stay on login screen */ }
+  })();
+
+
+  function renderChips(){
+    fileChips.innerHTML = "";
+    attachedFiles.forEach((f, i)=>{
+      const chip = document.createElement("div");
+      chip.className = "file-chip";
+      chip.innerHTML = `<span class="fname">${escapeHtml(f.name)}</span><span class="fsize">${fmtBytes(f.size)}</span><span class="remove" data-i="${i}">✕</span>`;
+      fileChips.appendChild(chip);
+    });
+    fileChips.querySelectorAll(".remove").forEach(el=>{
+      el.addEventListener("click", (e)=>{
+        const i = parseInt(e.currentTarget.getAttribute("data-i"),10);
+        attachedFiles.splice(i,1);
+        renderChips();
+        updateSendState();
+      });
+    });
+  }
+
+  /* ---- Single composer: scan attached files, or auto-detect what the
+     typed message is asking for (question / image / video / PPT / PDF) ---- */
+
+  /* ---- Single composer: scan attached files, or auto-detect what the
+     typed message is asking for (question / image / video / PPT / PDF) ---- */
+  let chatHistory = [];
+
+  function detectIntent(text){
+    const t = text.toLowerCase();
+    if(/\b(generate|create|make|draw|design|paint)\b[^.!?]{0,40}\b(image|picture|photo|illustration|logo|artwork|drawing)\b/.test(t)
+       || /\b(image|picture|photo)\s+of\b/.test(t)){
+      return "image";
+    }
+    if(/\b(generate|create|make)\b[^.!?]{0,40}\bvideo\b/.test(t) || /\bvideo\s+of\b/.test(t)){
+      return "video";
+    }
+    if(/\b(ppt|powerpoint|slide\s?deck|slides|presentation)\b/.test(t)){
+      return "ppt";
+    }
+    if(/\b(pdf)\b/.test(t) || (/\b(write|create|draft)\b[^.!?]{0,40}\bdocument\b/.test(t))){
+      return "pdf";
+    }
+    return "chat";
+  }
+
+  function updateSendState(){
+    const ready = attachedFiles.length>0 || noteInput.value.trim().length>0;
+    sendBtn.classList.toggle("ready", ready);
+  }
+
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  function addFiles(fileList){
+    for(const f of fileList){
+      attachedFiles.push(f);
+    }
+    renderChips();
+    updateSendState();
+  }
+
+  $("attach-btn").addEventListener("click", ()=>fileInput.click());
+  $("attach-folder-btn").addEventListener("click", ()=>folderInput.click());
+  fileInput.addEventListener("change", (e)=>{ addFiles(e.target.files); fileInput.value=""; });
+  folderInput.addEventListener("change", (e)=>{ addFiles(e.target.files); folderInput.value=""; });
+
+  ["dragenter","dragover"].forEach(ev=>{
+    dropzone.addEventListener(ev, (e)=>{ e.preventDefault(); dropzone.classList.add("dragover"); });
+  });
+  ["dragleave","drop"].forEach(ev=>{
+    dropzone.addEventListener(ev, (e)=>{ e.preventDefault(); dropzone.classList.remove("dragover"); });
+  });
+  dropzone.addEventListener("drop", (e)=>{
+    if(e.dataTransfer && e.dataTransfer.files) addFiles(e.dataTransfer.files);
+  });
+
+  noteInput.addEventListener("input", ()=>{
+    noteInput.style.height = "auto";
+    noteInput.style.height = Math.min(noteInput.scrollHeight, 160) + "px";
+    updateSendState();
+  });
+
+  function handleSend(){
+    if(attachedFiles.length>0){
+      startScan();
+    }else{
+      const t = noteInput.value.trim();
+      if(t) runAIAction(detectIntent(t), t);
+    }
+  }
+  sendBtn.addEventListener("click", handleSend);
+  noteInput.addEventListener("keydown", (e)=>{
+    if(e.key==="Enter" && !e.shiftKey){
+      e.preventDefault();
+      handleSend();
+    }
+  });
+
+  $("toggle-sidebar").addEventListener("click", ()=>sidebar.classList.toggle("collapsed"));
+  $("new-scan-btn").addEventListener("click", resetToHome);
+
+  /* ---- Profile menu (rename + logout) ---- */
+  const profileWrap = $("profile-wrap");
+  const profileBox = $("profile-box");
+  const profileMenu = $("profile-menu");
+
+  profileBox.addEventListener("click", (e)=>{
+    if(profileName.isContentEditable) return;
+    e.stopPropagation();
+    profileMenu.classList.toggle("open");
+  });
+  document.addEventListener("click", (e)=>{
+    if(profileWrap && !profileWrap.contains(e.target)) profileMenu.classList.remove("open");
+  });
+  $("profile-edit-btn").addEventListener("click", (e)=>{
+    e.stopPropagation();
+    profileMenu.classList.remove("open");
+    profileName.setAttribute("contenteditable","true");
+    profileName.focus();
+    document.execCommand("selectAll", false, null);
+  });
+  function commitProfileName(){
+    profileName.removeAttribute("contenteditable");
+    let val = profileName.textContent.trim() || "You";
+    profileName.textContent = val;
+    profileAvatar.textContent = val.slice(0,1).toUpperCase();
+  }
+  profileName.addEventListener("blur", commitProfileName);
+  profileName.addEventListener("keydown", (e)=>{
+    if(e.key==="Enter"){ e.preventDefault(); profileName.blur(); }
+  });
+  $("profile-logout-btn").addEventListener("click", (e)=>{
+    e.stopPropagation();
+    profileMenu.classList.remove("open");
+    logOut();
+  });
+
+  /* ---- Toast ---- */
+  let toastTimer = null;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>toastEl.classList.remove("show"), 2400);
+  }
+
+  /* ---- Share ---- */
+  function extractTextFromNode(node){
+    const text = (node?.innerText || node?.textContent || "").replace(/[ \t]+/g, " ").replace(/\n[ \t]*\n+/g, "\n\n").trim();
+    return text;
+  }
+  function getChatTranscript(kind = "all"){
+    const rows = [...messages.querySelectorAll(".msg-row")];
+    if (!rows.length) return "";
+    const parts = rows.map((row) => {
+      const isUser = row.classList.contains("msg-user");
+      const bubble = row.querySelector(".bubble, .content");
+      const text = extractTextFromNode(bubble);
+      if (!text) return "";
+      return `${isUser ? "You" : "Mentivo AI"}\n${text}`;
+    }).filter(Boolean);
+    if (kind === "result") {
+      return parts[parts.length - 1] || "";
+    }
+    return parts.join("\n\n");
+  }
+  function sessionPlainText(session){
+    const tmp = document.createElement("div");
+    tmp.innerHTML = session.html;
+    tmp.querySelectorAll("p, .file-card-head, .stat-pill, .msg-row, .fmeta").forEach(el=>{
+      el.insertAdjacentText("beforeend", "\n");
+    });
+    let text = (tmp.textContent || "").replace(/[ \t]+/g," ").replace(/\n[ \t]*\n+/g,"\n\n").trim();
+    return `Mentivo AI scan — ${session.title}\n\n${text}\n\n— Shared from Mentivo AI (local, no data leaves the device)`;
+  }
+  function activeSessionOrWarn(){
+    if(!currentSession){ toast("Nothing to share yet — run a scan first."); return null; }
+    return currentSession;
+  }
+  function shareTextPayload(mode = "session"){
+    const s = activeSessionOrWarn();
+    let text = "";
+    let title = "Mentivo AI";
+    if (mode === "result") {
+      text = getChatTranscript("result");
+      title = "Mentivo AI result";
+    } else if (mode === "chat") {
+      text = getChatTranscript("all");
+      title = currentSession ? currentSession.title : "Mentivo AI chat";
+    } else {
+      if (!s) return null;
+      text = sessionPlainText(s);
+      title = "Mentivo AI scan — " + s.title;
+    }
+    if (!text) {
+      toast(mode === "result" ? "No result to share yet." : "No chat content to share yet.");
+      return null;
+    }
+    return { title, text };
+  }
+  function shareViaLink(target, mode){
+    const payload = shareTextPayload(mode);
+    if (!payload) return;
+    const { title, text } = payload;
+    const capped = text.length > 1800 ? text.slice(0,1800) + "…" : text;
+    if (target === "whatsapp") {
+      window.open("https://wa.me/?text=" + encodeURIComponent(capped), "_blank");
+      return;
+    }
+    if (target === "email") {
+      const subject = encodeURIComponent(title);
+      window.location.href = "mailto:?subject=" + subject + "&body=" + encodeURIComponent(capped);
+      return;
+    }
+    if (target === "native") {
+      if (navigator.share) {
+        navigator.share({ title, text }).catch((err)=>{ if(err && err.name !== "AbortError") toast("Direct sharing is unavailable in this browser."); });
+        return;
+      }
+      toast("Direct device sharing isn't available in this preview window — try WhatsApp, Email, or Copy instead.");
+    }
+    if (target === "copy") {
+      navigator.clipboard.writeText(text).then(()=>toast("Shared content copied to clipboard.")).catch(()=>toast("Couldn't copy — clipboard access blocked."));
+    }
+  }
+  shareBtn.addEventListener("click", (e)=>{
+    e.stopPropagation();
+    shareMenu.classList.toggle("open");
+  });
+
+  document.addEventListener("click", (e)=>{
+    if(!shareMenu.contains(e.target) && e.target!==shareBtn) shareMenu.classList.remove("open");
+  });
+  $("share-result").addEventListener("click", ()=>{
+    shareMenu.classList.remove("open");
+    shareViaLink("native", "result");
+  });
+  $("share-chat").addEventListener("click", ()=>{
+    shareMenu.classList.remove("open");
+    shareViaLink("native", "chat");
+  });
+  $("share-native").addEventListener("click", async ()=>{
+    shareMenu.classList.remove("open");
+    const payload = shareTextPayload(currentSession ? "session" : "chat");
+    if (!payload) return;
+    const text = payload.text;
+    if(navigator.share){
+      try{
+        await navigator.share({ title: payload.title, text });
+        return;
+      }catch(err){
+        if(err && err.name==="AbortError") return;
+      }
+    }
+    toast("Direct device sharing isn't available in this preview window — try WhatsApp, Email, or Copy instead.");
+  });
+  $("share-whatsapp").addEventListener("click", ()=>{
+    shareMenu.classList.remove("open");
+    const payload = shareTextPayload(currentSession ? "session" : "chat");
+    if(!payload) return;
+    const text = payload.text.length > 1500 ? payload.text.slice(0,1500) + "…" : payload.text;
+    window.open("https://wa.me/?text=" + encodeURIComponent(text), "_blank");
+  });
+  $("share-email").addEventListener("click", ()=>{
+    shareMenu.classList.remove("open");
+    const payload = shareTextPayload(currentSession ? "session" : "chat");
+    if(!payload) return;
+    const text = payload.text.length > 1800 ? payload.text.slice(0,1800) + "…" : payload.text;
+    const subject = encodeURIComponent(payload.title);
+    window.location.href = "mailto:?subject=" + subject + "&body=" + encodeURIComponent(text);
+  });
+  $("share-copy").addEventListener("click", async ()=>{
+    shareMenu.classList.remove("open");
+    const payload = shareTextPayload(currentSession ? "session" : "chat");
+    if(!payload) return;
+    try{
+      await navigator.clipboard.writeText(payload.text);
+      toast("Transcript copied to clipboard.");
+    }catch(err){
+      toast("Couldn't copy — clipboard access blocked.");
+    }
+  });
+  $("share-download").addEventListener("click", ()=>{
+    shareMenu.classList.remove("open");
+    const payload = shareTextPayload(currentSession ? "session" : "chat");
+    if(!payload) return;
+    const blob = new Blob([payload.text], {type:"text/plain"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = (payload.title || "mentivo-ai-chat").replace(/[^\w.-]+/g,"_").slice(0,60) + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast("Transcript downloaded.");
+  });
+
+  function resetToHome(){
+    attachedFiles = [];
+    renderChips();
+    chatHistory = [];
+    messages.innerHTML = "";
+    updateSendState();
+    noteInput.value = "";
+    if ($("note-input-b")) $("note-input-b").value = "";
+    home.style.display = "flex";
+    chat.classList.remove("active");
+    currentSession = null;
+    topbarTitle.textContent = "Mentivo AI — local file scanner";
+    renderHistory();
+  }
+
+  function renderHistory(){
+    historyEl.innerHTML = "";
+    const sessionList = sessions.slice().reverse();
+    if (!sessionList.length) {
+      const empty = document.createElement("div");
+      empty.className = "history-item";
+      empty.textContent = "No chat history yet";
+      historyEl.appendChild(empty);
+      return;
+    }
+    sessionList.forEach((s)=>{
+      const item = document.createElement("div");
+      item.className = "history-item" + (s===currentSession ? " active" : "");
+      item.textContent = s.title;
+      item.addEventListener("click", ()=>openSession(s));
+      historyEl.appendChild(item);
+    });
+  }
+
+  function openSession(s){
+    currentSession = s;
+    home.style.display = "none";
+    chat.classList.add("active");
+    topbarTitle.textContent = s.title;
+    messages.innerHTML = s.html;
+    renderHistory();
+    messages.scrollTop = 0;
+    attachBottomComposer();
+    bindFileCardToggles();
+  }
+
+  function bubbleUser(text){
+    const row = document.createElement("div");
+    row.className = "msg-row msg-user";
+    row.innerHTML = `<div class="bubble-wrap"><div class="bubble">${escapeHtml(text)}</div><div class="msg-actions"><button class="msg-action" data-copy="user">Copy</button><button class="msg-action" data-edit="user">Edit</button></div></div>`;
+    messages.appendChild(row);
+    attachMessageActions(row);
+  }
+
+  function bubbleAK(html){
+    const row = document.createElement("div");
+    row.className = "msg-row msg-ak";
+    row.innerHTML = `<div class="avatar">M</div><div class="content-wrap"><div class="content">${html}</div><div class="msg-actions"><button class="msg-action" data-copy="ai">Copy</button></div></div>`;
+    messages.appendChild(row);
+    attachMessageActions(row);
+    return row;
+  }
+
+  function attachMessageActions(row){
+    row.querySelectorAll(".msg-action").forEach((btn)=>{
+      btn.addEventListener("click", () => {
+        const content = btn.closest(".bubble-wrap, .content-wrap")?.querySelector(".bubble, .content")?.textContent || "";
+        const type = btn.getAttribute("data-copy");
+        if (btn.getAttribute("data-edit") === "user") {
+          const text = content.trim();
+          const next = prompt("Edit your message:", text);
+          if (next && next.trim()) {
+            const updated = next.trim();
+            btn.closest(".bubble-wrap").querySelector(".bubble").textContent = updated;
+            noteInput.value = updated;
+            if (currentSession) {
+              currentSession.html = messages.innerHTML;
+            }
+            toast("Message updated.");
+          }
+          return;
+        }
+        if (type === "user" || type === "ai") {
+          navigator.clipboard?.writeText(content).then(() => toast("Message copied.")).catch(() => toast("Copy blocked."));
+        }
+      });
+    });
+  }
+
+  function bindFileCardToggles(){
+    messages.querySelectorAll(".file-card-head").forEach(head=>{
+      head.onclick = ()=>{ head.parentElement.classList.toggle("open"); };
+    });
+  }
+
+  async function startScan(){
+    if(attachedFiles.length===0) return;
+
+    const filesToScan = attachedFiles.slice();
+    const note = noteInput.value.trim();
+
+    home.style.display = "none";
+    chat.classList.add("active");
+    messages.innerHTML = "";
+
+    const title = filesToScan.length===1 ? filesToScan[0].name : `${filesToScan.length} files`;
+    topbarTitle.textContent = title;
+
+    let userMsg = `Scan ${filesToScan.length} file${filesToScan.length>1?"s":""}: ${filesToScan.map(f=>f.name).join(", ")}`;
+    if(note) userMsg += `\nNote: ${note}`;
+    bubbleUser(userMsg);
+
+    const thinking = bubbleAK(`<p>Scanning ${filesToScan.length} file${filesToScan.length>1?"s":""} locally…</p>`);
+    messages.scrollTop = messages.scrollHeight;
+
+    const sentenceCount = /short|brief|quick/i.test(note) ? 4 : (/long|detailed|thorough/i.test(note) ? 10 : 7);
+    const results = [];
+    for(const f of filesToScan){
+      results.push(await analyzeFile(f, sentenceCount));
+    }
+
+    thinking.remove();
+
+    const supported = results.filter(r=>r.supported);
+    const textLike = results.filter(r=>r.supported && !r.isImage && !r.isMedia && r.wordCount);
+    const unsupported = results.filter(r=>!r.supported);
+    const totalWords = textLike.reduce((a,r)=>a+(r.wordCount||0),0);
+    const totalBytes = results.reduce((a,r)=>a+(r.size||0),0);
+
+    let html = "";
+    html += `<p>Done. Here's the summary of what Mentivo AI found.</p>`;
+    html += `<div class="overview-strip">
+      <div class="stat-pill"><b>${results.length}</b> file(s) scanned</div>
+      <div class="stat-pill"><b>${supported.length}</b> opened successfully</div>
+      <div class="stat-pill"><b>${totalWords.toLocaleString()}</b> words analyzed</div>
+      <div class="stat-pill"><b>${fmtBytes(totalBytes)}</b> total size</div>
+    </div>`;
+
+    results.forEach((r,i)=>{
+      const iconLabel = (r.ext || "file").slice(0,4).toUpperCase();
+      html += `<div class="file-card${results.length===1?" open":""}">
+        <div class="file-card-head">
+          <div class="file-icon">${escapeHtml(iconLabel)}</div>
+          <div class="fname">${escapeHtml(r.name)}</div>
+          <div class="fmeta">${fmtBytes(r.size)}</div>
+          <div class="chevron">▾</div>
+        </div>
+        <div class="file-card-body">`;
+
+      if(r.isImage){
+        html += `<img class="file-thumb" src="${r.previewUrl}" alt="${escapeHtml(r.name)}">`;
+        html += `<p>${escapeHtml(r.summary)}</p>`;
+      } else if(r.isMedia){
+        html += `<${r.mediaCategory} class="file-media" controls src="${r.previewUrl}"></${r.mediaCategory}>`;
+        html += `<p>${escapeHtml(r.summary)}</p>`;
+      } else if(r.supported){
+        const badges = [];
+        if(r.pageCount) badges.push(`${r.pageCount} page${r.pageCount>1?"s":""}`);
+        if(r.slideCount) badges.push(`${r.slideCount} slide${r.slideCount>1?"s":""}`);
+        if(r.sheetCount) badges.push(`${r.sheetCount} sheet${r.sheetCount>1?"s":""}`);
+        if(r.rowCount) badges.push(`${r.rowCount} row${r.rowCount>1?"s":""}`);
+        if(badges.length) html += `<div class="badge-row">${badges.map(b=>`<span class="badge">${escapeHtml(b)}</span>`).join("")}</div>`;
+        html += `<p>${escapeHtml(r.summary)}</p>`;
+        if(r.wordCount) html += `<div class="fmeta">${r.wordCount.toLocaleString()} words · ${r.charCount.toLocaleString()} characters</div>`;
+      } else if(r.error){
+        html += `<div class="unsupported-note">I couldn't parse this file (${escapeHtml(r.errorMsg || "unknown error")}). It may be corrupted, password-protected, or in a format I don't fully support yet.</div>`;
+      } else {
+        html += `<div class="unsupported-note">I don't have a reader for "${escapeHtml(r.ext || "this")}" files yet — for example, I can open .pdf or .docx, but archive or executable formats aren't supported. Only file metadata is shown here, no content summary was generated.</div>`;
+      }
+      html += `</div></div>`;
+    });
+
+    bubbleAK(html);
+    bindFileCardToggles();
+    messages.scrollTop = messages.scrollHeight;
+
+    const session = { title, html: messages.innerHTML };
+    sessions.push(session);
+    currentSession = session;
+    renderHistory();
+
+    attachedFiles = [];
+    renderChips();
+    updateSendState();
+    noteInput.value = "";
+    attachBottomComposer();
+  }
+
+  const MODE_TITLES = { chat:"Ask Mentivo AI", image:"Generate image", video:"Generate video", ppt:"Create PPT", pdf:"Create PDF" };
+  const MODE_THINKING = { chat:"Thinking…", image:"Generating your image…", video:"Generating your video…", ppt:"Drafting your presentation…", pdf:"Writing your document…" };
+
+  function buildImageRequest(prompt){
+    const style = $("image-style")?.value || "";
+    const ratio = $("image-ratio")?.value || "";
+    const count = Number($("image-count")?.value || 1);
+    const negativePrompt = ($("image-negative")?.value || "").trim();
+    return {
+      prompt,
+      style: style || undefined,
+      ratio: ratio || undefined,
+      count: Number.isFinite(count) ? Math.min(Math.max(count, 1), 4) : 1,
+      negativePrompt: negativePrompt || undefined
+    };
+  }
+
+  async function runAIAction(mode, text){
+    if(!text) return;
+    home.style.display = "none";
+    chat.classList.add("active");
+    topbarTitle.textContent = MODE_TITLES[mode] || "Mentivo AI";
+
+    bubbleUser(text);
+    const thinking = bubbleAK(`<p>${escapeHtml(MODE_THINKING[mode] || "Working…")}</p>`);
+    messages.scrollTop = messages.scrollHeight;
+
+    try{
+      if(mode==="chat"){
+        const res = await fetch("/api/ai/chat", {
+          method:"POST", headers:{"Content-Type":"application/json"}, credentials:"include",
+          body: JSON.stringify({ message:text, history: chatHistory })
+        });
+        const data = await res.json();
+        thinking.remove();
+        if(!res.ok){
+          bubbleAK(`<p>${escapeHtml(data.error || "Something went wrong.")}</p>`);
+        }else{
+          chatHistory.push({ role:"user", content:text });
+          chatHistory.push({ role:"assistant", content:data.reply });
+          bubbleAK(`<p>${escapeHtml(data.reply).replace(/\n/g,"<br>")}</p>`);
+        }
+      }else{
+        if(mode==="image"){
+          const imageReq = buildImageRequest(text);
+          const res = await fetch("/api/ai/image", {
+            method:"POST", headers:{"Content-Type":"application/json"}, credentials:"include",
+            body: JSON.stringify(imageReq)
+          });
+          const data = await res.json();
+          thinking.remove();
+          if(!res.ok){
+            bubbleAK(`<p>${escapeHtml(data.error || "Something went wrong.")}</p>`);
+          }else{
+            const imageUrl = Array.isArray(data.imageUrls) ? data.imageUrls[0] : data.imageUrl;
+            bubbleAK(`<img class="file-thumb" src="${imageUrl}" alt="Generated image"><p>Here's what I generated for: "${escapeHtml(text)}"</p>`);
+          }
+        }else if(mode==="video"){
+          const res = await fetch("/api/ai/video", {
+            method:"POST", headers:{"Content-Type":"application/json"}, credentials:"include",
+            body: JSON.stringify({ prompt:text })
+          });
+          const data = await res.json().catch(()=>({}));
+          thinking.remove();
+          if(!res.ok || !data.videoUrl){
+            bubbleAK(`<p>${escapeHtml(data.error || "Video generation isn't available yet.")}</p>`);
+          }else{
+            bubbleAK(`<video class="file-media" controls src="${data.videoUrl}"></video><p>Here's what I generated for: "${escapeHtml(text)}"</p>`);
+          }
+        }else if(mode==="ppt" || mode==="pdf"){
+          const res = await fetch(`/api/ai/${mode}`, {
+            method:"POST", headers:{"Content-Type":"application/json"}, credentials:"include",
+            body: JSON.stringify({ topic:text })
+          });
+          thinking.remove();
+          if(!res.ok){
+            const data = await res.json().catch(()=>({}));
+            bubbleAK(`<p>${escapeHtml(data.error || "Something went wrong.")}</p>`);
+          }else{
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const filename = mode==="ppt" ? "mentivo-presentation.pptx" : "mentivo-document.pdf";
+            const label = mode==="ppt" ? "presentation" : "document";
+            bubbleAK(`<p>Done! Your ${label} is ready.</p><a class="download-link" href="${url}" download="${filename}">⬇ Download ${escapeHtml(filename)}</a>`);
+          }
+        }
+      }
+    }catch(err){
+      thinking.remove();
+      bubbleAK(`<p>Couldn't reach the server. Is it running?</p>`);
+    }
+
+    messages.scrollTop = messages.scrollHeight;
+    noteInput.value = "";
+    updateSendState();
+    attachBottomComposer();
+  }
+
+  function attachBottomComposer(){
+    const target = $("composer-wrap-bottom");
+    target.innerHTML = "";
+    const wrap = document.createElement("div");
+    wrap.innerHTML = `
+      <div id="dropzone-b" style="border:1px solid var(--border);border-radius:20px;background:var(--panel);padding:10px 12px;">
+        <div id="file-chips-b" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px;"></div>
+        <div style="display:flex;align-items:flex-end;gap:8px;">
+          <button id="attach-btn-b" class="icon-btn" title="Attach files">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+          </button>
+          <textarea id="note-input-b" rows="1" placeholder="Ask anything, or attach files to scan…" style="flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:var(--font-body);font-size:16px;resize:none;max-height:120px;padding:8px 4px;"></textarea>
+          <button id="send-btn-b" class="icon-btn" title="Send"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+        </div>
+      </div>`;
+    target.appendChild(wrap);
+
+    $("attach-btn-b").addEventListener("click", ()=>fileInput.click());
+    $("send-btn-b").addEventListener("click", ()=>{
+      const noteB = $("note-input-b").value.trim();
+      if(attachedFiles.length>0){
+        noteInput.value = noteB;
+        startScan();
+      }else if(noteB){
+        runAIAction(detectIntent(noteB), noteB);
+      }
+    });
+    $("note-input-b").addEventListener("keydown", (e)=>{
+      if(e.key==="Enter" && !e.shiftKey){
+        e.preventDefault();
+        $("send-btn-b").click();
+      }
+    });
+
+    renderChipsB();
+  }
+
+  function renderChipsB(){
+    const el = $("file-chips-b");
+    if(!el) return;
+    el.innerHTML = "";
+    attachedFiles.forEach((f,i)=>{
+      const chip = document.createElement("div");
+      chip.className = "file-chip";
+      chip.innerHTML = `<span class="fname">${escapeHtml(f.name)}</span><span class="fsize">${fmtBytes(f.size)}</span><span class="remove" data-i="${i}">✕</span>`;
+      el.appendChild(chip);
+    });
+    el.querySelectorAll(".remove").forEach(elm=>{
+      elm.addEventListener("click", (e)=>{
+        const i = parseInt(e.currentTarget.getAttribute("data-i"),10);
+        attachedFiles.splice(i,1);
+        renderChipsB();
+        renderChips();
+        updateSendState();
+      });
+    });
+  }
+
+  const origAddFiles = addFiles;
+  window.addEventListener("DOMContentLoaded", ()=>{
+    fileInput.addEventListener("change", ()=>{ renderChipsB(); });
+  });
+
+  $("example-link").addEventListener("click", ()=>{
+    home.style.display = "none";
+    chat.classList.add("active");
+    messages.innerHTML = "";
+    topbarTitle.textContent = "Example scan (demo)";
+
+    bubbleUser("Scan 2 files: quarterly-notes.txt, team-offsite.jpg");
+    const exampleHtml = `
+      <p>This is a demo, not a real scan — just showing how I explain things once you upload your own files.</p>
+      <div class="file-card open">
+        <div class="file-card-head">
+          <div class="file-icon">TXT</div>
+          <div class="fname">quarterly-notes.txt</div>
+          <div class="fmeta">4.1 KB</div>
+          <div class="chevron">▾</div>
+        </div>
+        <div class="file-card-body">
+          <p>Here's the gist: the notes cover Q3 planning, with the team agreeing to prioritize the mobile redesign before the API migration. Budget for the redesign was approved at $40k, and the migration got pushed to Q4 due to a staffing gap on the backend team. There's also a reminder to follow up with legal on the new vendor contract by the 15th.</p>
+          <div class="fmeta">312 words · 1,840 characters</div>
+        </div>
+      </div>
+      <div class="file-card open">
+        <div class="file-card-head">
+          <div class="file-icon">JPG</div>
+          <div class="fname">team-offsite.jpg</div>
+          <div class="fmeta">2.8 MB</div>
+          <div class="chevron">▾</div>
+        </div>
+        <div class="file-card-body">
+          <p>Here's what I can tell just from the file itself: it's a 4032×3024px image. I don't run an offline vision model in your browser, so I can't actually describe what's pictured — for example, I can't tell you whether this is a group photo from the offsite, a whiteboard sketch, or a slide screenshot. I can only report on size and format, not the visual content.</p>
+        </div>
+      </div>`;
+    bubbleAK(exampleHtml);
+    bindFileCardToggles();
+    messages.scrollTop = 0;
+    attachBottomComposer();
+  });
+
+  /* Start with the sidebar hidden on small/mobile screens so it doesn't
+     crowd the scanner; the toggle button still opens it as an overlay. */
+  if(window.matchMedia("(max-width: 720px)").matches){
+    sidebar.classList.add("collapsed");
+  }
+
+  updateSendState();
+})();
+</script>
+</body>
+</html>

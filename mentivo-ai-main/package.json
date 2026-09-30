@@ -1,0 +1,22 @@
+{
+  "name": "mentivo-ai",
+  "version": "1.1.0",
+  "description": "Mentivo AI — local file scanner + AI chat/image/PPT/PDF, with a real authentication backend (email/password + Google/Microsoft OAuth2)",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node --watch server/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cookie-parser": "^1.4.6",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "dotenv": "^16.4.5",
+    "pptxgenjs": "^3.12.0",
+    "pdfkit": "^0.15.0"
+  }
+}
